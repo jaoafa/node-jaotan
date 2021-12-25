@@ -20,7 +20,7 @@ client.on('ready', async () => {
  */
 async function greetingCheck(message: Message): Promise<void> {
   // 3秒待ってから
-  await new Promise((resolve) => setTimeout(resolve, 3000))
+  await new Promise((resolve) => setTimeout(resolve, 5000))
 
   if (message.content !== 'jao' && message.content !== 'afa') {
     try {
@@ -39,7 +39,14 @@ async function greetingCheck(message: Message): Promise<void> {
     return
   }
 
-  if (message.reactions.cache.size !== 0) {
+  const result = await message.awaitReactions({
+    filter: (_, user) => {
+      return user.id === client.user?.id
+    },
+    time: 10000,
+  })
+
+  if (result.size !== 0) {
     return
   }
 
