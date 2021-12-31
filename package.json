@@ -29,7 +29,7 @@
     "axios": "0.24.0",
     "config": "3.3.6",
     "discord.js": "13.5.0",
-    "eslint": "8.3.0",
+    "eslint": "8.5.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-config-standard": "16.0.3",
     "eslint-plugin-import": "2.25.3",
