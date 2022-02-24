@@ -2,7 +2,11 @@ import config from 'config'
 import { Client, DiscordAPIError, Intents, Message } from 'discord.js'
 
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+  ],
 })
 
 export function getClient() {
@@ -39,14 +43,12 @@ async function greetingCheck(message: Message): Promise<void> {
     return
   }
 
-  const result = await message.awaitReactions({
-    filter: (_, user) => {
-      return user.id === client.user?.id
-    },
-    time: 10000,
-  })
+  const sleep = (msec: number) =>
+    new Promise((resolve) => setTimeout(resolve, msec))
+  sleep(10000)
 
-  if (result.size !== 0) {
+  const newMessage = await message.channel.messages.fetch(message.id)
+  if (newMessage.reactions.cache.filter(r => r.me).size !== 0) {
     return
   }
 
@@ -106,10 +108,6 @@ client.on('messageCreate', async (message: Message) => {
     await nsfwCheck(message)
   }
 })
-/*
-client.on('messageUpdate',async (old: Message | PartialMessage, newMessage: Message | PartialMessage) => {
-
-  }) */
 
 client
   .login(config.get('discordToken'))
