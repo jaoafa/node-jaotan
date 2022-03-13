@@ -45,7 +45,7 @@ async function greetingCheck(message: Message): Promise<void> {
 
   const sleep = (msec: number) =>
     new Promise((resolve) => setTimeout(resolve, msec))
-  await sleep(10000)
+  await sleep(5000)
 
   const newMessage = await message.channel.messages.fetch(message.id)
   if (newMessage.reactions.cache.filter((r) => r.me).size !== 0) {
