@@ -1,5 +1,6 @@
 import config from 'config'
 import { Client, DiscordAPIError, Message } from 'discord.js'
+import { setTimeout } from 'node:timers/promises'
 
 const client = new Client({
   intents: [
@@ -14,7 +15,7 @@ export function getClient() {
   return client
 }
 
-client.on('ready', async () => {
+client.on('ready', () => {
   console.log(`ready: ${client.user?.tag}`)
 })
 
@@ -24,43 +25,38 @@ client.on('ready', async () => {
  * @param message メッセージ
  */
 async function greetingCheck(message: Message): Promise<void> {
-  // 3秒待ってから
-  await new Promise((resolve) => setTimeout(resolve, 5000))
+  // 5秒待ってから
+  await setTimeout(5000)
 
   if (message.content !== 'jao' && message.content !== 'afa') {
     try {
       await message.delete()
-    } catch (e) {
-      if (!(e instanceof DiscordAPIError)) {
-        throw e
+    } catch (error) {
+      if (!(error instanceof DiscordAPIError)) {
+        throw error
       }
       return
     }
-    await message.channel
-      .send('<@' + message.author.id + '>, SERVICE UNAVAILABLE')
-      .then((msg) => {
-        setTimeout(() => msg.delete(), 10000)
-      })
+    const reply = await message.channel.send(
+      '<@' + message.author.id + '>, SERVICE UNAVAILABLE',
+    )
+    await setTimeout(10_000)
+    await reply.delete()
     return
   }
-
-  const sleep = (msec: number) =>
-    new Promise((resolve) => setTimeout(resolve, msec))
-  await sleep(5000)
+  await setTimeout(5000)
 
   const newMessage = await message.channel.messages.fetch(message.id)
-  if (newMessage.reactions.cache.filter((r) => r.me).size !== 0) {
+  if (newMessage.reactions.cache.filter((r) => r.me).size > 0) {
     return
   }
 
-  await message
-    .reply(
-      '現在、自動権限付与システムが停止しています。しばらく経ってからもう一度お試しください。(このメッセージは10秒後に削除されます)'
-    )
-    .then((msg) => {
-      setTimeout(() => msg.delete(), 10000)
-    })
   await message.react('⚒')
+  const reply = await message.reply(
+    '現在、自動権限付与システムが停止しています。しばらく経ってからもう一度お試しください。(このメッセージは10秒後に削除されます)',
+  )
+  await setTimeout(10_000)
+  await reply.delete()
 }
 
 /**
@@ -70,30 +66,30 @@ async function greetingCheck(message: Message): Promise<void> {
  */
 async function nsfwCheck(message: Message): Promise<void> {
   // 3秒待ってから
-  await new Promise((resolve) => setTimeout(resolve, 3000))
+  await setTimeout(3000)
 
   if (message.attachments.size === 0) {
     return
   }
 
-  message.attachments.forEach((attachment) => {
-    if (attachment.name?.startsWith('SPOILER_')) {
-      return
+  for (const attachment of message.attachments.values()) {
+    if (attachment.name.startsWith('SPOILER_')) {
+      continue
     }
     try {
-      message.delete()
-    } catch (e) {
-      if (!(e instanceof DiscordAPIError)) {
-        throw e
+      await message.delete()
+    } catch (error) {
+      if (!(error instanceof DiscordAPIError)) {
+        throw error
       }
-      return
+      continue
     }
-    message.channel.send(
+    await message.channel.send(
       '<@' +
         message.author.id +
-        '>,スポイラーの設定がされていないファイルは投稿できません。'
+        '>,スポイラーの設定がされていないファイルは投稿できません。',
     )
-  })
+  }
 }
 
 client.on('messageCreate', async (message: Message) => {
@@ -104,7 +100,7 @@ client.on('messageCreate', async (message: Message) => {
 
   if (
     message.channel.id === '597768445601382400' &&
-    message.attachments.size !== 0
+    message.attachments.size > 0
   ) {
     await nsfwCheck(message)
   }
@@ -112,4 +108,10 @@ client.on('messageCreate', async (message: Message) => {
 
 client
   .login(config.get('discordToken'))
-  .then(() => console.log('Login Successful.'))
+  .then(() => {
+    console.log('Login Successful.')
+  })
+  .catch((error: unknown) => {
+    console.error('Login Failed.')
+    console.error(error)
+  })
